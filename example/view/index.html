@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>Tiny Go Web</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+    <style type="text/css">
+    .sp1 {
+        color: #8E7F70;
+    }
+    .sp2 {
+        color: #288DCE;
+    }
+    .sp3 {
+        color: #EC763C;
+    }
+    body {
+        padding-top: 70px;
+    }
+    </style>
+</head>
+
+<body>
+    <include src="include/nav.html">
+        <div class="jumbotron">
+            <h1>Hello,
+                <span class="sp1">Tiny
+                </span>
+                <span class="sp2">GO</span>
+                <span class="sp3">Web</span>
+            </h1>
+            <p>
+                <ul>
+                    <li>作者： {{.author.Name}}</li>
+                    <li>Email: {{.author.Email}}</li>
+                    <li>QQ: {{.author.QQ}}</li>
+                    <li>Blog: {{.author.Blog}}</li>
+                </ul>
+            </p>
+            <p><a class="btn btn-primary btn-lg" role="button" href="/hello?msg=Go Tiny Web">Say Hello</a>
+                <a class="btn btn-primary btn-lg" role="button" href="/json">JSON</a>
+            </p>
+        </div>
+</body>
+
+</html>
