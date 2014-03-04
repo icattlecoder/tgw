@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/icattlecoder/tgw"
 	. "github.com/icattlecoder/tgw/example/models"
+	"log"
 )
 
 type Server struct {
@@ -18,7 +19,17 @@ type TestArgs struct {
 }
 
 func (s *Server) Hello(args TestArgs, env tgw.ReqEnv) {
+
+	_, err := env.Session.Get("key")
+	if err != nil {
+		log.Println(err)
+	}
+
 	env.RW.Write([]byte(args.Msg))
+	err = env.Session.Set("key", args)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (s *Server) Index() (data map[string]interface{}) {
@@ -30,6 +41,13 @@ func (s *Server) Index() (data map[string]interface{}) {
 		Blog:  "http://blog.segmentfault.com/icattlecoder",
 	}
 	data["author"] = author
+	data["index"] = true
+	return
+}
+
+func (s *Server) Doc() (data map[string]interface{}) {
+	data = map[string]interface{}{}
+	data["doc"] = true
 	return
 }
 
@@ -42,5 +60,9 @@ func (s *Server) Json() (data map[string]interface{}) {
 		Blog:  "http://blog.segmentfault.com/icattlecoder",
 	}
 	data["author"] = author
+	return
+}
+
+func (s *Server) AdminIndex() (data map[string]interface{}) {
 	return
 }

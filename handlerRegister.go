@@ -13,18 +13,19 @@ import (
 )
 
 var (
-	viewDir = "view"
-	DEBUG   = true
+	viewDir   = "view"
+	staticDir = "static"
+	DEBUG     = true
 )
 
 type ReqEnv struct {
-	RW  http.ResponseWriter
-	Req *http.Request
+	RW      http.ResponseWriter
+	Req     *http.Request
+	Session SessionInterface
 }
 
 func staticDirHandler(mux *http.ServeMux, prefix string, staticDir string, flags int) {
 	mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {
-
 		file := staticDir
 		if prefix == "/" && r.URL.Path == "/" {
 			file += "/index.html"
@@ -55,6 +56,9 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 	env := ReqEnv{}
 	env_type := reflect.TypeOf(env)
 
+	//
+	session_data := make(D)
+
 	//auto register routers based on reflect
 	for i := 0; i < _type.NumMethod(); i++ {
 
@@ -65,14 +69,14 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 
 		log.Println("Register ", router, "===>", funName)
 		mux.HandleFunc(router, func(rw http.ResponseWriter, req *http.Request) {
-
+			session := NewSimpleSession(rw, req, &session_data)
 			args := []reflect.Value{}
 			for i := 0; i < methodTyp.NumIn(); i++ {
 				//解析第i个参数
 				arg_t := methodTyp.In(i)
 				arg_v := reflect.New(arg_t).Elem()
 				if arg_t == env_type {
-					arg_v = reflect.ValueOf(newReqEnv(rw, req))
+					arg_v = reflect.ValueOf(newReqEnv(rw, req, session))
 				} else {
 					requestQueryParse(req, arg_t, &arg_v)
 				}
@@ -97,12 +101,12 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 	}
 
 	//static file server
-	staticDirHandler(mux, "/static/", "static", 0)
+	staticDirHandler(mux, "/static/", staticDir, 0)
 	return
 }
 
-func newReqEnv(rw http.ResponseWriter, req *http.Request) (reqEnv ReqEnv) {
-	reqEnv = ReqEnv{RW: rw, Req: req}
+func newReqEnv(rw http.ResponseWriter, req *http.Request, session SessionInterface) (reqEnv ReqEnv) {
+	reqEnv = ReqEnv{RW: rw, Req: req, Session: session}
 	return
 }
 

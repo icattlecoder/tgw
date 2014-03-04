@@ -6,15 +6,15 @@
         <a class="navbar-brand" href="#">
             <span class="sp1"><b>Tiny</b>
             </span>
-            <span class="sp2">GO </span>
+            <span class="sp2">GO</span>
             <span class="sp3">Web</span>
         </a>
     </div>
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-6">
         <ul class="nav navbar-nav">
-            <li class="active"><a href="/demo">示例</a>
+            <li {{if .index}} class="active"{{end}}><a href="/index">示例</a>
             </li>
-            <li><a href="/doc">文档</a>
+            <li {{if .doc}} class="active"{{end}}><a href="/doc">文档</a>
             </li>
         </ul>
     </div>
