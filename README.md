@@ -7,7 +7,6 @@ Tiny Go Web (TGW)是一个非常简单的Web框架，甚至谈不上框架。TGW
 
 ```
 > go get github.com/icattlecoder/tgw
-> go install ./...
 > cd src/github.com/icattlecoder/tgw/example
 > go build
 > ./example 
@@ -18,6 +17,7 @@ Tiny Go Web (TGW)是一个非常简单的Web框架，甚至谈不上框架。TGW
 
 TGW使用非常简单，没有固定的目录结构，不过遵循大众习惯，我把它组成以下结构：
 
+```
 │── controllers
 │   ├── default.go
 ├── main.go
@@ -31,6 +31,7 @@ TGW使用非常简单，没有固定的目录结构，不过遵循大众习惯�
     ├── include
     │   └── nav.html
     └── index.html
+```
 
 ## 控制器
 
