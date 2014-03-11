@@ -23,26 +23,347 @@
 </head>
 
 <body>
-    <include src="include/nav.html">
-        <div class="jumbotron">
-            <h1>Hello,
-                <span class="sp1">Tiny
-                </span>
-                <span class="sp2">GO</span>
-                <span class="sp3">Web</span>
-            </h1>
-            <p>
-                <ul>
-                    <li>作者： {{.author.Name}}</li>
-                    <li>Email: {{.author.Email}}</li>
-                    <li>QQ: {{.author.QQ}}</li>
-                    <li>Blog: {{.author.Blog}}</li>
-                </ul>
-            </p>
-            <p><a class="btn btn-primary btn-lg" role="button" href="/hello?msg=Go Tiny Web">Say Hello</a>
-                <a class="btn btn-primary btn-lg" role="button" href="/json">JSON</a>
-            </p>
+    <include src="include/nav.html" />
+    <article class="markdown-body entry-content" itemprop="mainContentOfPage">
+        <h1>
+            <a name="tiny-go-web" class="anchor" href="#tiny-go-web">
+                <span class="octicon octicon-link"></span>
+            </a>Tiny Go Web</h1>
+
+        <hr>
+        <p>Tiny Go Web (TGW)是一个非常简单的Web框架，甚至谈不上框架。TGW无意取代任何框架，TGW的诞生是因为作者在使用beego时有种挫败感，决定自己重新写一个适合自己网站用的，从构思到完成总共只花了一天的时间，因为觉得它已经够用了，就没有继续添加新的功能。</p>
+
+        <h2>
+            <a name="%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B" class="anchor" href="#%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B">
+                <span class="octicon octicon-link"></span>
+            </a>运行示例</h2>
+
+        <pre>
+            <code>&gt; go get github.com/icattlecoder/tgw &gt; cd src/github.com/icattlecoder/tgw/example &gt; go build &gt; ./example
+            </code>
+        </pre>
+
+        <p>
+            <a href="https://github-camo.global.ssl.fastly.net/c3a603114f2315415c31c59ca8b3574ee13979d3/687474703a2f2f69636174746c65636f6465722e71696e6975646e2e636f6d2f7467772e706e67" target="_blank">
+                <img src="https://github-camo.global.ssl.fastly.net/c3a603114f2315415c31c59ca8b3574ee13979d3/687474703a2f2f69636174746c65636f6465722e71696e6975646e2e636f6d2f7467772e706e67" alt="img" data-canonical-src="http://icattlecoder.qiniudn.com/tgw.png" style="max-width:100%;">
+            </a>
+        </p>
+
+        <p>TGW使用非常简单，没有固定的目录结构，不过遵循大众习惯，我把它组成以下结构：</p>
+
+        <p>│── controllers │&nbsp;&nbsp; ├── default.go ├── main.go ├── models │&nbsp;&nbsp; └── Author.go ├── static │&nbsp;&nbsp; ├── css │&nbsp;&nbsp; ├── img │&nbsp;&nbsp; └── js └──── view &nbsp;&nbsp; ├── include &nbsp;&nbsp; │&nbsp;&nbsp; └── nav.html &nbsp;&nbsp; └── index.html</p>
+
+        <h2>
+            <a name="%E6%8E%A7%E5%88%B6%E5%99%A8" class="anchor" href="#%E6%8E%A7%E5%88%B6%E5%99%A8">
+                <span class="octicon octicon-link"></span>
+            </a>控制器</h2>
+
+        <p>控制器实现自动路由注册。例如有以下的结构</p>
+
+        <div class="highlight highlight-go">
+            <pre>
+                <span class="kd">type</span>
+                <span class="nx">Server</span>
+                <span class="kd">struct</span>
+                <span class="p">{</span>
+                <span class="c1">//成员由业务逻辑而定，如mgo的数据库连接信息等</span>
+                <span class="p">}</span>
+
+                <span class="kd">func</span>
+                <span class="nx">NewServer</span>
+                <span class="p">(</span>
+                <span class="cm">/*入参，例如从配置文件中读取*/</span>
+                <span class="p">)</span>
+                <span class="o">*</span>
+                <span class="nx">Server</span>
+                <span class="p">{</span>
+                <span class="k">return</span>
+                <span class="o">&amp;</span>
+                <span class="nx">Server</span>
+                <span class="p">{}</span>
+                <span class="p">}</span>
+
+                <span class="c1">//对应模板为index.html ,返回值data用于渲染模板</span>
+                <span class="kd">func</span>
+                <span class="p">(</span>
+                <span class="nx">s</span>
+                <span class="o">*</span>
+                <span class="nx">Server</span>
+                <span class="p">)</span>
+                <span class="nx">Index</span>
+                <span class="p">()</span>
+                <span class="p">(</span>
+                <span class="nx">data</span>
+                <span class="kd">map</span>
+                <span class="p">[</span>
+                <span class="kt">string</span>
+                <span class="p">]</span>
+                <span class="kd">interface</span>
+                <span class="p">{})</span>
+                <span class="p">{</span>
+                <span class="nx">data</span>
+                <span class="p">=</span>
+                <span class="kd">map</span>
+                <span class="p">[</span>
+                <span class="kt">string</span>
+                <span class="p">]</span>
+                <span class="kd">interface</span>
+                <span class="p">{}{}</span>
+                <span class="nx">author</span>
+                <span class="o">:=</span>
+                <span class="nx">Author</span>
+                <span class="p">{</span>
+                <span class="nx">Name</span>
+                <span class="p">:</span>
+                <span class="s">"icattlecoder"</span>
+                <span class="p">,</span>
+                <span class="nx">Email</span>
+                <span class="p">:</span>
+                <span class="p">[]</span>
+                <span class="kt">string</span>
+                <span class="p">{</span>
+                <span class="s">"icattlecoder@gmail.com"</span>
+                <span class="p">,</span>
+                <span class="s">"iwangming@hotmail.com"</span>
+                <span class="p">},</span>
+                <span class="nx">QQ</span>
+                <span class="p">:</span>
+                <span class="s">"405283013"</span>
+                <span class="p">,</span>
+                <span class="nx">Blog</span>
+                <span class="p">:</span>
+                <span class="s">"http://blog.segmentfault.com/icattlecoder"</span>
+                <span class="p">,</span>
+                <span class="p">}</span>
+                <span class="nx">data</span>
+                <span class="p">[</span>
+                <span class="s">"author"</span>
+                <span class="p">]</span>
+                <span class="p">=</span>
+                <span class="nx">author</span>
+                <span class="k">return</span>
+                <span class="p">}</span>
+
+                <span class="c1">//由于没有json.html模板，但是却有data返回值，此data将以json字符串的格式返回</span>
+                <span class="kd">func</span>
+                <span class="p">(</span>
+                <span class="nx">s</span>
+                <span class="o">*</span>
+                <span class="nx">Server</span>
+                <span class="p">)</span>
+                <span class="nx">Json</span>
+                <span class="p">()</span>
+                <span class="p">(</span>
+                <span class="nx">data</span>
+                <span class="kd">map</span>
+                <span class="p">[</span>
+                <span class="kt">string</span>
+                <span class="p">]</span>
+                <span class="kd">interface</span>
+                <span class="p">{})</span>
+                <span class="p">{</span>
+                <span class="nx">data</span>
+                <span class="p">=</span>
+                <span class="kd">map</span>
+                <span class="p">[</span>
+                <span class="kt">string</span>
+                <span class="p">]</span>
+                <span class="kd">interface</span>
+                <span class="p">{}{}</span>
+                <span class="nx">author</span>
+                <span class="o">:=</span>
+                <span class="nx">Author</span>
+                <span class="p">{</span>
+                <span class="nx">Name</span>
+                <span class="p">:</span>
+                <span class="s">"icattlecoder"</span>
+                <span class="p">,</span>
+                <span class="nx">Email</span>
+                <span class="p">:</span>
+                <span class="p">[]</span>
+                <span class="kt">string</span>
+                <span class="p">{</span>
+                <span class="s">"icattlecoder@gmail.com"</span>
+                <span class="p">,</span>
+                <span class="s">"iwangming@hotmail.com"</span>
+                <span class="p">},</span>
+                <span class="nx">QQ</span>
+                <span class="p">:</span>
+                <span class="s">"405283013"</span>
+                <span class="p">,</span>
+                <span class="nx">Blog</span>
+                <span class="p">:</span>
+                <span class="s">"http://blog.segmentfault.com/icattlecoder"</span>
+                <span class="p">,</span>
+                <span class="p">}</span>
+                <span class="nx">data</span>
+                <span class="p">[</span>
+                <span class="s">"author"</span>
+                <span class="p">]</span>
+                <span class="p">=</span>
+                <span class="nx">author</span>
+                <span class="k">return</span>
+                <span class="p">}</span>
+
+
+                <span class="c1">//这里根据请求自动解析出args</span>
+                <span class="c1">//例如可将 /hello?msg=hello world的函数解析为TestArgs{Msg:"hello world"}</span>
+                <span class="c1">//由于没有hello.html模板，并且没有返回值，可以通过env中的RW成员写入返回数据</span>
+                <span class="kd">func</span>
+                <span class="p">(</span>
+                <span class="nx">s</span>
+                <span class="o">*</span>
+                <span class="nx">Server</span>
+                <span class="p">)</span>
+                <span class="nx">Hello</span>
+                <span class="p">(</span>
+                <span class="nx">args</span>
+                <span class="nx">TestArgs</span>
+                <span class="p">,</span>
+                <span class="nx">env</span>
+                <span class="nx">tgw</span>
+                <span class="p">.</span>
+                <span class="nx">ReqEnv</span>
+                <span class="p">)</span>
+                <span class="p">{</span>
+
+                <span class="nx">env</span>
+                <span class="p">.</span>
+                <span class="nx">RW</span>
+                <span class="p">.</span>
+                <span class="nx">Write</span>
+                <span class="p">([]</span>
+                <span class="nb">byte</span>
+                <span class="p">(</span>
+                <span class="nx">args</span>
+                <span class="p">.</span>
+                <span class="nx">Msg</span>
+                <span class="p">))</span>
+                <span class="nx">err</span>
+                <span class="p">=</span>
+                <span class="nx">env</span>
+                <span class="p">.</span>
+                <span class="nx">Session</span>
+                <span class="p">.</span>
+                <span class="nx">Set</span>
+                <span class="p">(</span>
+                <span class="s">"key"</span>
+                <span class="p">,</span>
+                <span class="nx">args</span>
+                <span class="p">)</span>
+                <span class="k">if</span>
+                <span class="nx">err</span>
+                <span class="o">!=</span>
+                <span class="kc">nil</span>
+                <span class="p">{</span>
+                <span class="nx">log</span>
+                <span class="p">.</span>
+                <span class="nx">Println</span>
+                <span class="p">(</span>
+                <span class="nx">err</span>
+                <span class="p">)</span>
+                <span class="p">}</span>
+                <span class="p">}</span>
+            </pre>
         </div>
+
+        <p>程序启动</p>
+
+        <div class="highlight highlight-go">
+            <pre>
+                <span class="kd">func</span>
+                <span class="nx">main</span>
+                <span class="p">()</span>
+                <span class="p">{</span>
+                <span class="nx">ser</span>
+                <span class="o">:=</span>
+                <span class="nx">controllers</span>
+                <span class="p">.</span>
+                <span class="nx">NewServer</span>
+                <span class="p">()</span>
+                <span class="nx">mux</span>
+                <span class="o">:=</span>
+                <span class="nx">tgw</span>
+                <span class="p">.</span>
+                <span class="nx">Register</span>
+                <span class="p">(</span>
+                <span class="o">&amp;</span>
+                <span class="nx">ser</span>
+                <span class="p">)</span>
+                <span class="nx">log</span>
+                <span class="p">.</span>
+                <span class="nx">Fatal</span>
+                <span class="p">(</span>
+                <span class="nx">http</span>
+                <span class="p">.</span>
+                <span class="nx">ListenAndServe</span>
+                <span class="p">(</span>
+                <span class="s">":8080"</span>
+                <span class="p">,</span>
+                <span class="nx">mux</span>
+                <span class="p">))</span>
+                <span class="p">}</span>
+            </pre>
+        </div>
+
+        <p>tgw的Register方法会自动注册以下的路由：</p>
+
+        <pre>
+            <code>/hello ===&gt; Hello /index ===&gt; Index /Json ===&gt; Json /admin/index ===&gt; AdminIndex
+            </code>
+        </pre>
+
+        <p>即
+            <code>localhost:8080/index</code>的处理函数是
+            <code>service.Index</code>,
+            <code>localhost:8080/admin/index</code>的处理函数是
+            <code>service.AdminIndex</code>
+        </p>
+
+        <h2>
+            <a name="%E8%A7%86%E5%9B%BE" class="anchor" href="#%E8%A7%86%E5%9B%BE">
+                <span class="octicon octicon-link"></span>
+            </a>视图</h2>
+
+        <p>视图默认放在view文件夹中，其文件名与url有关，例如：
+            <code>/hello</code>对应
+            <code>view/index.html</code>
+            如果某个url没有对应的视图，但是它的处理函数却有返回值，那么将返回对象JOSN序列化的结果。 视图中可以通过
+            <code>&lt;include src="&lt;src&gt;"&gt;</code>指令包含其它文件，如公共区域</p>
+
+        <h2>
+            <a name="%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90" class="anchor" href="#%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90">
+                <span class="octicon octicon-link"></span>
+            </a>参数解析</h2>
+
+        <pre>
+            <code>type TestArgs struct { Msg string } func (s *Server) Hello(args TestArgs, env tgw.ReqEnv)
+
+            </code>
+        </pre>
+
+        <p>对于请求
+            <code>localhost:8080/Hello?msg=Hello world</code>，tgw将自动根据语法方法识别并解析出TestArgs变量. 当前能够自动解析的类型有
+            <code>int</code>、
+            <code>string</code>、
+            <code>bool</code>、
+            <code>float64</code>
+        </p>
+
+        <h2>
+            <a name="session%E6%94%AF%E6%8C%81" class="anchor" href="#session%E6%94%AF%E6%8C%81">
+                <span class="octicon octicon-link"></span>
+            </a>Session支持</h2>
+
+        <p>框架实现了一个简单的基于内存的session管理,如果需要使用session，处理函数必须有一个类型为tgw.ReqEnv的参数,通过此函数可访问Session。</p>
+
+        <h2>
+            <a name="%E8%87%AA%E5%AE%9A%E4%B9%89" class="anchor" href="#%E8%87%AA%E5%AE%9A%E4%B9%89">
+                <span class="octicon octicon-link"></span>
+            </a>自定义</h2>
+
+        <p>如果函数包含类型为tgw.ReqEnv函数，且无返回值，可以直接向ReqEnv.RW中写入返回结果</p>
+    </article>
 </body>
 
 </html>

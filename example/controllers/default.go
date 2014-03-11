@@ -20,19 +20,25 @@ type TestArgs struct {
 
 func (s *Server) Hello(args TestArgs, env tgw.ReqEnv) {
 
-	_, err := env.Session.Get("key")
-	if err != nil {
-		log.Println(err)
-	}
-
 	env.RW.Write([]byte(args.Msg))
-	err = env.Session.Set("key", args)
+	err := env.Session.Set("key", args)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func (s *Server) Index() (data map[string]interface{}) {
+func (s *Server) Session(env tgw.ReqEnv) {
+
+	keyValue :=""
+	err := env.Session.Get("key",&keyValue)
+	if err != nil {
+		log.Println(err)
+	}
+	env.RW.Write([]byte(keyValue))
+	
+}
+
+func (s *Server) Index(env tgw.ReqEnv) (data map[string]interface{}) {
 	data = map[string]interface{}{}
 	author := Author{
 		Name:  "icattlecoder",
@@ -42,6 +48,7 @@ func (s *Server) Index() (data map[string]interface{}) {
 	}
 	data["author"] = author
 	data["index"] = true
+	env.Session.Set("hello", "Tiny GO Web")
 	return
 }
 

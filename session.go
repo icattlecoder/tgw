@@ -1,25 +1,29 @@
 package tgw
 
 import (
-	"errors"
+	"crypto/sha1"
+	"encoding/base64"
+	"encoding/binary"
 	"net/http"
-	"strconv"
-	"sync/atomic"
+	"sync"
 	"time"
 )
 
-type SessionInterface interface {
-	Get(key string) (interface{}, error)
-	Set(key string, val interface{}) error
+type SessionStoreInterface interface {
+	Get(sid string, key string, val interface{}) error
+	Set(sid string, key string, val interface{}) error
+	Clear(sid string, key string)
 }
 
-//==================================================
-type d map[string]interface{}
-type D map[string]d
+type SessionInterface interface {
+	Get(key string, val interface{}) error
+	Set(key string, val interface{}) error
+	Clear(key string)
+}
 
 var (
 	SESSION_NAME = "TGW_SESSION_ID"
-	SESSION_ID   = int32(1)
+	sidMux       = sync.RWMutex{}
 )
 
 //==================================================
@@ -28,7 +32,7 @@ type SimpleSession struct {
 	id    string
 	rw    http.ResponseWriter
 	req   *http.Request
-	value *D
+	store SessionStoreInterface
 }
 
 // Options --------------------------------------------------------------------
@@ -53,36 +57,35 @@ var DefaultSessionOptions = &Options{
 	HttpOnly: true,
 }
 
-func NewSimpleSession(rw http.ResponseWriter, req *http.Request, data *D) (session *SimpleSession) {
+func NewSimpleSession(rw http.ResponseWriter, req *http.Request, store SessionStoreInterface) (session *SimpleSession) {
 
 	session = &SimpleSession{
 		rw:    rw,
 		req:   req,
-		value: data,
+		store: store,
 	}
 
 	coki, err := req.Cookie(SESSION_NAME)
 	if err == nil && coki != nil {
-		return &SimpleSession{
-			rw:    rw,
-			req:   req,
-			id:    coki.Value,
-			value: data,
-		}
+		session.id = coki.Value
 	} else {
 		session.id = getSid()
 		session.Flush()
-	}
-
-	if (*session.value)[coki.Value] == nil {
-		(*session.value)[coki.Value] = make(d)
+		// (*session.value)[session.id] = make(d)
 	}
 	return
 }
 
 func getSid() string {
-	atomic.AddInt32(&SESSION_ID, 1)
-	return strconv.Itoa(int(SESSION_ID))
+
+	sidMux.Lock()
+	defer sidMux.Unlock()
+	now := time.Now().UnixNano()
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(now))
+	hash := sha1.New()
+	hash.Write(b)
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
 
 // NewCookie returns an http.Cookie with the options set. It also sets
@@ -109,30 +112,16 @@ func NewCookie(name, value string) *http.Cookie {
 	return cookie
 }
 
-func (s *SimpleSession) Get(key string) (val interface{}, err error) {
+func (s *SimpleSession) Clear(key string) {
+	s.store.Clear(s.id, key)
+}
 
-	ma, ok := (*s.value)[s.id]
-	if !ok {
-		(*s.value)[s.id] = make(d)
-		err = errors.New("SimpleSession.Get error : No such SESSION_ID " + s.id)
-		return
-	}
-
-	if _, ok := ma[key]; ok {
-		val = ma[key]
-	} else {
-		err = errors.New("SimpleSession.Get error : No such Key " + key)
-	}
-	return
+func (s *SimpleSession) Get(key string, val interface{}) (err error) {
+	return s.store.Get(s.id, key, val)
 }
 
 func (s *SimpleSession) Set(key string, val interface{}) (err error) {
-	ma, ok := (*s.value)[s.id]
-	if !ok {
-		ma = make(d)
-	}
-	ma[key] = val
-	return
+	return s.store.Set(s.id, key, val)
 }
 
 func (s *SimpleSession) Flush() {

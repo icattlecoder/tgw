@@ -4,6 +4,7 @@ import (
 	"errors"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 
 type view struct {
 	viewDir string
+	delims  []string
 	cache   map[string]*template.Template
 }
 
@@ -23,14 +25,15 @@ func NewView(viewDir string) (v *view, err error) {
 		err = errors.New(viewDir + " is not a Dir")
 	}
 	cache := map[string]*template.Template{}
-	v = &view{viewDir: viewDir, cache: cache}
+	delims := []string{"((", "))"}
+	v = &view{viewDir: viewDir, cache: cache, delims: delims}
 	return
 }
 
-// Example usage: <include src="include/header.hmtl">
+// Example usage: <include src="include/header.hmtl" />
 func (v *view) includeHandler(content string) (result string) {
 	result = content
-	r := regexp.MustCompile(`<include src="([^>]*)">`)
+	r := regexp.MustCompile(`<include src="([^>]*)" />`)
 	matches := r.FindAllStringSubmatch(result, -1)
 	for _, val := range matches {
 		sr := regexp.MustCompile(val[0])
@@ -56,6 +59,19 @@ func (v *view) Get(name string) (tpl *template.Template, err error) {
 	//html的后缀有个好处，sublime等编辑器可对其代码格式化
 	name += ".html"
 	pat := path.Join(v.viewDir, name)
+	if DEBUG {
+		icld := ""
+		icld, err = v.readViewFile(name)
+		if err != nil {
+			return nil, err
+		}
+		icld = v.includeHandler(icld)
+		tpl, err = template.New(name).Delims(v.delims[0], v.delims[1]).Parse(icld)
+		if err != nil {
+			log.Println("Template.Parse err:", err)
+		}
+		return
+	}
 	if tpl2, ok := v.cache[pat]; ok {
 		tpl = tpl2
 		return
@@ -66,9 +82,7 @@ func (v *view) Get(name string) (tpl *template.Template, err error) {
 			return nil, err
 		}
 		icld = v.includeHandler(icld)
-		tpl, err = template.New(name).Parse(icld)
-
-		// tpl, err = template.ParseFiles(pat)
+		tpl, err = template.New(name).Delims(v.delims[0], v.delims[1]).Parse(icld)
 		if err != nil {
 			return
 		}

@@ -23,26 +23,27 @@
 </head>
 
 <body>
-    <include src="include/nav.html">
-        <div class="jumbotron">
-            <h1>Hello,
-                <span class="sp1">Tiny
-                </span>
-                <span class="sp2">GO</span>
-                <span class="sp3">Web</span>
-            </h1>
-            <p>
-                <ul>
-                    <li>作者： {{.author.Name}}</li>
-                    <li>Email: {{.author.Email}}</li>
-                    <li>QQ: {{.author.QQ}}</li>
-                    <li>Blog: {{.author.Blog}}</li>
-                </ul>
-            </p>
-            <p><a class="btn btn-primary btn-lg" role="button" href="/hello?msg=Go Tiny Web">Say Hello</a>
-                <a class="btn btn-primary btn-lg" role="button" href="/json">JSON</a>
-            </p>
-        </div>
+    <include src="include/nav.html" />
+    <div class="jumbotron">
+        <h1>Hello,
+            <span class="sp1">Tiny
+            </span>
+            <span class="sp2">GO</span>
+            <span class="sp3">Web</span>
+        </h1>
+        <p>
+            <ul>
+                <li>作者： ((.author.Name))</li>
+                <li>Email:((range .author.Email)) ((.)) ((end))
+                </li>
+                <li>QQ: (( .author.QQ))</li>
+                <li>Blog: ((.author.Blog))</li>
+            </ul>
+        </p>
+        <p><a class="btn btn-primary btn-lg" role="button" href="/hello?msg=Go Tiny Web">Say Hello</a>
+            <a class="btn btn-primary btn-lg" role="button" href="/json">JSON</a>
+        </p>
+    </div>
 </body>
 
 </html>

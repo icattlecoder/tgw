@@ -3,11 +3,10 @@ package tgw
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -24,28 +23,43 @@ type ReqEnv struct {
 	Session SessionInterface
 }
 
-func staticDirHandler(mux *http.ServeMux, prefix string, staticDir string, flags int) {
-	mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {
-		file := staticDir
-		if prefix == "/" && r.URL.Path == "/" {
-			file += "/index.html"
-		} else {
-			file += r.URL.Path[len(staticDir)+1:]
-		}
-		if (flags) == 0 {
-			fi, err := os.Stat(file)
-			if err != nil || fi.IsDir() {
-				http.NotFound(w, r)
-				return
-			}
-		}
-		http.ServeFile(w, r, file)
-	})
+type tgw struct {
+	parses       []RegisterParse
+	mux          *http.ServeMux
+	sessionStore SessionStoreInterface
+	index 		string
 }
 
-func Register(controller interface{}) (mux *http.ServeMux) {
+func NewTGW() *tgw {
+	mux := http.NewServeMux()
+	t := tgw{mux: mux,index:"/index"}
+	argsParse := ArgsParse{}
+	envParser := EnvParse{}
 
-	mux = http.NewServeMux()
+	return t.AddParser(&argsParse).AddParser(&envParser)
+}
+
+func (t *tgw) AddParser(parser RegisterParse) *tgw {
+	t.parses = append(t.parses, parser)
+	return t
+}
+
+// eg . "/default"
+func (t *tgw) SetIndexPage(prefix string) *tgw {
+	t.index = prefix
+	return t
+}
+
+func (t *tgw) SetSessionStore(store SessionStoreInterface) *tgw {
+	t.sessionStore = store
+	return t
+}
+
+func (t *tgw) Register(controller interface{}) *tgw {
+
+	if t.mux == nil {
+		t.mux = http.NewServeMux()
+	}
 	_type := reflect.TypeOf(controller).Elem()
 	_value := reflect.ValueOf(controller).Elem()
 
@@ -53,11 +67,9 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 	if err != nil {
 		log.Println("NewView err:", err)
 	}
-	env := ReqEnv{}
-	env_type := reflect.TypeOf(env)
-
-	//
-	session_data := make(D)
+	if t.sessionStore == nil {
+		t.sessionStore = NewSimpleSessionStore()
+	}
 
 	//auto register routers based on reflect
 	for i := 0; i < _type.NumMethod(); i++ {
@@ -67,26 +79,31 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 		method := _value.Method(i)
 		methodTyp := method.Type()
 
+		viewName := router
+		if router == t.index {
+			router ="/"
+		}
 		log.Println("Register ", router, "===>", funName)
-		mux.HandleFunc(router, func(rw http.ResponseWriter, req *http.Request) {
-			session := NewSimpleSession(rw, req, &session_data)
+
+		t.mux.HandleFunc(router, func(rw http.ResponseWriter, req *http.Request) {
+			session := NewSimpleSession(rw, req, t.sessionStore)
 			args := []reflect.Value{}
+			env := newReqEnv(rw, req, session)
 			for i := 0; i < methodTyp.NumIn(); i++ {
 				//解析第i个参数
 				arg_t := methodTyp.In(i)
-				arg_v := reflect.New(arg_t).Elem()
-				if arg_t == env_type {
-					arg_v = reflect.ValueOf(newReqEnv(rw, req, session))
-				} else {
-					requestQueryParse(req, arg_t, &arg_v)
+				for _, v := range t.parses {
+					if arg_v, ok := v.Parse(&env, arg_t); ok {
+						args = append(args, arg_v)
+						break
+					}
 				}
-				args = append(args, arg_v)
 			}
 			start := time.Now()
 			callRet := method.Call(args)
 
 			if len(callRet) > 0 {
-				if tpl, err := view.Get(router); err != nil {
+				if tpl, err := view.Get(viewName); err != nil {
 					if bytes, err := json.Marshal(callRet[0].Interface()); err == nil {
 						rw.Write(bytes)
 					}
@@ -99,59 +116,28 @@ func Register(controller interface{}) (mux *http.ServeMux) {
 			lgr.INFO()
 		})
 	}
+	return t
+}
 
+func (t *tgw) Run(addr string) (err error) {
+	if t.mux == nil {
+		err = errors.New("mux is nil")
+		return
+	}
 	//static file server
-	staticDirHandler(mux, "/static/", staticDir, 0)
-	return
+	staticDirHandler(t.mux, "/static/", staticDir)
+	return http.ListenAndServe(addr, t.mux)
 }
 
-func newReqEnv(rw http.ResponseWriter, req *http.Request, session SessionInterface) (reqEnv ReqEnv) {
-	reqEnv = ReqEnv{RW: rw, Req: req, Session: session}
-	return
+func staticDirHandler(mux *http.ServeMux, prefix string, staticDir string) {
+	mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {
+		file := staticDir + r.URL.Path[len(staticDir)+1:]
+		http.ServeFile(w, r, file)
+	})
 }
 
-// 通过Request参数解析形参
-func requestQueryParse(req *http.Request, typ reflect.Type, vl *reflect.Value) {
-
-	get := func(key string) string {
-		return req.URL.Query().Get(key)
-	}
-
-	post := func(key string) string {
-		return req.FormValue(key)
-	}
-
-	fun := (func() func(string) string {
-		if req.Method == "POST" {
-			req.ParseForm()
-			return post
-		}
-		return get
-	})()
-
-	for i := 0; i < typ.NumField(); i++ {
-		qryName := typ.Field(i).Name
-		qryName = strings.ToLower(qryName)
-		qry := fun(qryName)
-		tn := typ.Field(i).Type.Name()
-		switch tn {
-		case "string":
-			vl.Field(i).SetString(qry)
-		case "int":
-			if ival, err := strconv.Atoi(qry); err == nil {
-				vl.Field(i).SetInt(int64(ival))
-			}
-		case "bool":
-			if ival, err := strconv.ParseBool(qry); err == nil {
-				vl.Field(i).SetBool(ival)
-			}
-		case "float64":
-			if ival, err := strconv.ParseFloat(qry, 64); err == nil {
-				vl.Field(i).SetFloat(ival)
-			}
-		}
-	}
-	return
+func newReqEnv(rw http.ResponseWriter, req *http.Request, session SessionInterface) ReqEnv {
+	return ReqEnv{RW: rw, Req: req, Session: session}
 }
 
 func fun_router(funName string) string {

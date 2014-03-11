@@ -4,12 +4,12 @@ import (
 	"github.com/icattlecoder/tgw"
 	"github.com/icattlecoder/tgw/example/controllers"
 	"log"
-	"net/http"
 )
 
 func main() {
 	ser := controllers.NewServer()
-	mux := tgw.Register(&ser)
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	t:=tgw.NewTGW()
 
+	store:=tgw.NewMemcachedSessionStore("127.0.0.1:11211")
+	log.Fatal(t.SetSessionStore(store).Register(&ser).Run(":8080"))
 }

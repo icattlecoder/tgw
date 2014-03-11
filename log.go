@@ -4,6 +4,7 @@ import (
 	"log"
 )
 
+//废品日志
 type Logger struct {
 	level  string
 	start  int64
