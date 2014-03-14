@@ -37,7 +37,6 @@ func (s *memcachedSessionStore) Get(id string, key string, val interface{}) (err
 		return
 	}
 	err = json.Unmarshal(item.Value, &val)
-	log.Println("json.Unmarshal:err", err, "val:", val)
 	if err != nil {
 		return
 	}

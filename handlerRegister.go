@@ -39,22 +39,27 @@ func NewTGW() *tgw {
 	return t.AddParser(&argsParse).AddParser(&envParser)
 }
 
+//增加url=>args的解析接口。内置两种，EnvParse和ArgsParse，请参考args_parser.go
+//用户也可以根据自己的业务逻辑实现Parse接口
 func (t *tgw) AddParser(parser RegisterParse) *tgw {
 	t.parses = append(t.parses, parser)
 	return t
 }
 
-// eg . "/default"
+// 设置默认页面，默认为"/"=>"/index",即访问localhost实现路由至localhost/index
 func (t *tgw) SetIndexPage(prefix string) *tgw {
 	t.index = prefix
 	return t
 }
 
+// 设置Session的存储介质，内置两种：应用程序空间内存及memecached
 func (t *tgw) SetSessionStore(store SessionStoreInterface) *tgw {
 	t.sessionStore = store
 	return t
 }
 
+// 注册路由，此函数自动将入参的对外方法注册为路由，成员方法以驼峰式命名,其规则如下：
+// AxxxBxxCxx() => /axxx/bxx/cx 
 func (t *tgw) Register(controller interface{}) *tgw {
 
 	if t.mux == nil {
