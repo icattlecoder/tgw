@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bradfitz/gomemcache/memcache"
-	"log"
 )
 
 //==================================================

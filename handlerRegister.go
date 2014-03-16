@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"reflect"
@@ -27,12 +28,12 @@ type tgw struct {
 	parses       []RegisterParse
 	mux          *http.ServeMux
 	sessionStore SessionStoreInterface
-	index 		string
+	index        string
 }
 
 func NewTGW() *tgw {
 	mux := http.NewServeMux()
-	t := tgw{mux: mux,index:"/index"}
+	t := tgw{mux: mux, index: "/index"}
 	argsParse := ArgsParse{}
 	envParser := EnvParse{}
 
@@ -59,7 +60,7 @@ func (t *tgw) SetSessionStore(store SessionStoreInterface) *tgw {
 }
 
 // 注册路由，此函数自动将入参的对外方法注册为路由，成员方法以驼峰式命名,其规则如下：
-// AxxxBxxCxx() => /axxx/bxx/cx 
+// AxxxBxxCxx() => /axxx/bxx/cx
 func (t *tgw) Register(controller interface{}) *tgw {
 
 	if t.mux == nil {
@@ -86,7 +87,7 @@ func (t *tgw) Register(controller interface{}) *tgw {
 
 		viewName := router
 		if router == t.index {
-			router ="/"
+			router = "/"
 		}
 		log.Println("Register ", router, "===>", funName)
 
@@ -108,6 +109,7 @@ func (t *tgw) Register(controller interface{}) *tgw {
 			callRet := method.Call(args)
 
 			if len(callRet) > 0 {
+				//有返回值，如果渲染模板
 				if tpl, err := view.Get(viewName); err != nil {
 					if bytes, err := json.Marshal(callRet[0].Interface()); err == nil {
 						rw.Write(bytes)
@@ -115,6 +117,13 @@ func (t *tgw) Register(controller interface{}) *tgw {
 				} else {
 					tpl.Execute(rw, callRet[0].Interface())
 				}
+			} else {
+				//无返回值
+				r, err := view.GetHtml(viewName)
+				if err != nil {
+					return
+				}
+				io.Copy(rw, r)
 			}
 			end := time.Now()
 			lgr := Logger{start: start.Unix(), method: req.Method, url: req.URL.RawQuery, host: req.Host, taken: end.Sub(start).Nanoseconds()}

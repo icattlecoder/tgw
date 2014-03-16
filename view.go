@@ -3,6 +3,7 @@ package tgw
 import (
 	"errors"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -52,6 +53,14 @@ func (v *view) readViewFile(filename string) (content string, err error) {
 		return
 	}
 	content = string(bs)
+	return
+}
+
+func (v *view) GetHtml(name string) (reader io.Reader, err error) {
+	//html的后缀有个好处，sublime等编辑器可对其代码格式化
+	name += ".html"
+	pat := path.Join(v.viewDir, name)
+	reader, err = os.Open(pat)
 	return
 }
 
