@@ -11,9 +11,9 @@ type memcachedSessionStore struct {
 	client *memcache.Client
 }
 
-func NewMemcachedSessionStore(mc string) *memcachedSessionStore {
+func NewMemcachedSessionStore(mc ...string) *memcachedSessionStore {
 
-	return &memcachedSessionStore{client: memcache.New(mc)}
+	return &memcachedSessionStore{client: memcache.New(mc...)}
 }
 
 func memcache_key(id, key string) string {

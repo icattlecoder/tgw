@@ -23,7 +23,27 @@
 </head>
 
 <body>
-    <include src="include/nav.html" />
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-6">
+                <span class="sr-only">Tiny Go Web</span>
+            </button>
+            <a class="navbar-brand" href="#">
+                <span class="sp1"><b>Tiny</b>
+                </span>
+                <span class="sp2">GO</span>
+                <span class="sp3">Web</span>
+            </a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-6">
+            <ul class="nav navbar-nav">
+                <li {{if .index}} class="active" {{end}}><a href="/index">示例</a>
+                </li>
+                <li {{if .doc}} class="active" {{end}}><a href="/doc">文档</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <article class="markdown-body entry-content" itemprop="mainContentOfPage">
         <h1>
             <a name="tiny-go-web" class="anchor" href="#tiny-go-web">

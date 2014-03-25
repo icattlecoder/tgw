@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
+	// "io"
 	"log"
 	"net/http"
 	"reflect"
@@ -119,17 +119,22 @@ func (t *tgw) Register(controller interface{}) *tgw {
 				}
 			} else {
 				//无返回值
-				r, err := view.GetHtml(viewName)
-				if err != nil {
-					return
-				}
-				io.Copy(rw, r)
+				// r, err := view.GetHtml(viewName)
+				// if err != nil {
+				// 	return
+				// }
+				// io.Copy(rw, r)
 			}
 			end := time.Now()
+			log.Println(funName)
 			lgr := Logger{start: start.Unix(), method: req.Method, url: req.URL.RawQuery, host: req.Host, taken: end.Sub(start).Nanoseconds()}
 			lgr.INFO()
 		})
 	}
+	return t
+}
+
+func (t *tgw) RegisterREST(controller interface{}) *tgw {
 	return t
 }
 
@@ -140,6 +145,7 @@ func (t *tgw) Run(addr string) (err error) {
 	}
 	//static file server
 	staticDirHandler(t.mux, "/static/", staticDir)
+	log.Println("Listen:",addr)
 	return http.ListenAndServe(addr, t.mux)
 }
 
