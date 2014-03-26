@@ -31,6 +31,10 @@ type tgw struct {
 	index        string
 }
 
+func func_name() {
+	
+}
+
 func NewTGW() *tgw {
 	mux := http.NewServeMux()
 	t := tgw{mux: mux, index: "/index"}
@@ -53,7 +57,7 @@ func (t *tgw) SetIndexPage(prefix string) *tgw {
 	return t
 }
 
-// 设置Session的存储介质，内置两种：应用程序空间内存及memecached
+// 设置Session的存储介质，内置memecached
 func (t *tgw) SetSessionStore(store SessionStoreInterface) *tgw {
 	t.sessionStore = store
 	return t

@@ -24,7 +24,6 @@ func (e *EnvParse) Parse(env *ReqEnv, typ reflect.Type) (vl reflect.Value, parse
 }
 
 //解析名称符合`*Args`的结构体
-
 type ArgsParse struct{}
 
 func (d *ArgsParse) Parse(env *ReqEnv, typ reflect.Type) (vl reflect.Value, parsed bool) {

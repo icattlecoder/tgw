@@ -1,6 +1,7 @@
 package tgw
 
 import (
+	"github.com/icattlecoder/mcClient"
 	"encoding/json"
 	"errors"
 	"github.com/bradfitz/gomemcache/memcache"
@@ -8,12 +9,11 @@ import (
 
 //==================================================
 type memcachedSessionStore struct {
-	client *memcache.Client
+	client mcClient.MC
 }
 
 func NewMemcachedSessionStore(mc ...string) *memcachedSessionStore {
-
-	return &memcachedSessionStore{client: memcache.New(mc...)}
+	return &memcachedSessionStore{client:mcClient.NewGobMCClient("session", mc...)}
 }
 
 func memcache_key(id, key string) string {
@@ -27,32 +27,22 @@ func (s *memcachedSessionStore) Clear(id string, key string) {
 
 func (s *memcachedSessionStore) Get(id string, key string, val interface{}) (err error) {
 
-	item, err := s.client.Get(memcache_key(id, key))
-	if err != nil {
-		return
-	}
-	if len(item.Value) == 0 {
-		err = errors.New("memcache miss cache,key:" + memcache_key(id, key))
-		return
-	}
-	err = json.Unmarshal(item.Value, &val)
-	if err != nil {
-		return
-	}
+	err = s.client.Get(memcache_key(id, key),val)
+	return
+}
+
+func (s *memcachedSessionStore) GetString(id string, key string) (val string, err error) {
+
+	val, err = s.client.GetString(memcache_key(id, key))
 	return
 }
 
 func (s *memcachedSessionStore) Set(id string, key string, val interface{}) (err error) {
 
-	bval, err := json.Marshal(val)
-	if err != nil {
-		return
-	}
+	return s.client.Set(memcache_key(id, key), val)
+}
 
-	item := &memcache.Item{
-		Key:   memcache_key(id, key),
-		Value: bval,
-	}
-	err = s.client.Set(item)
-	return
+func (s *memcachedSessionStore) SetString(id string, key string, val string) (err error) {
+
+	return s.client.SetString(memcache_key(id,key), val)
 }
