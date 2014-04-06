@@ -2,9 +2,6 @@ package tgw
 
 import (
 	"github.com/icattlecoder/mcClient"
-	"encoding/json"
-	"errors"
-	"github.com/bradfitz/gomemcache/memcache"
 )
 
 //==================================================

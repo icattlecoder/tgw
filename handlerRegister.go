@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	// "io"
+	"io"
 	"log"
 	"net/http"
 	"reflect"
@@ -29,10 +29,6 @@ type tgw struct {
 	mux          *http.ServeMux
 	sessionStore SessionStoreInterface
 	index        string
-}
-
-func func_name() {
-	
 }
 
 func NewTGW() *tgw {
@@ -78,7 +74,7 @@ func (t *tgw) Register(controller interface{}) *tgw {
 		log.Println("NewView err:", err)
 	}
 	if t.sessionStore == nil {
-		t.sessionStore = NewSimpleSessionStore()
+		t.sessionStore = NewMemcachedSessionStore()
 	}
 
 	//auto register routers based on reflect
@@ -123,11 +119,11 @@ func (t *tgw) Register(controller interface{}) *tgw {
 				}
 			} else {
 				//无返回值
-				// r, err := view.GetHtml(viewName)
-				// if err != nil {
-				// 	return
-				// }
-				// io.Copy(rw, r)
+				r, err := view.GetHtml(viewName)
+				if err != nil {
+					return
+				}
+				io.Copy(rw, r)
 			}
 			end := time.Now()
 			log.Println(funName)
