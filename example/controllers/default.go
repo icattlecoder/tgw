@@ -52,12 +52,6 @@ func (s *Server) Index(env tgw.ReqEnv) (data map[string]interface{}) {
 	return
 }
 
-func (s *Server) Doc() (data map[string]interface{}) {
-	data = map[string]interface{}{}
-	data["doc"] = true
-	return
-}
-
 func (s *Server) Json() (data map[string]interface{}) {
 	data = map[string]interface{}{}
 	data["author"] = author

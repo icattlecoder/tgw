@@ -10,7 +10,7 @@ type memcachedSessionStore struct {
 }
 
 func NewMemcachedSessionStore(mc ...string) *memcachedSessionStore {
-	return &memcachedSessionStore{client:mcClient.NewGobMCClient("session", mc...)}
+	return &memcachedSessionStore{client: mcClient.NewGobMCClient("session", mc...)}
 }
 
 func memcache_key(id, key string) string {
@@ -24,14 +24,12 @@ func (s *memcachedSessionStore) Clear(id string, key string) {
 
 func (s *memcachedSessionStore) Get(id string, key string, val interface{}) (err error) {
 
-	err = s.client.Get(memcache_key(id, key),val)
-	return
+	return s.client.Get(memcache_key(id, key), val)
 }
 
 func (s *memcachedSessionStore) GetString(id string, key string) (val string, err error) {
 
-	val, err = s.client.GetString(memcache_key(id, key))
-	return
+	return s.client.GetString(memcache_key(id, key))
 }
 
 func (s *memcachedSessionStore) Set(id string, key string, val interface{}) (err error) {
@@ -41,5 +39,5 @@ func (s *memcachedSessionStore) Set(id string, key string, val interface{}) (err
 
 func (s *memcachedSessionStore) SetString(id string, key string, val string) (err error) {
 
-	return s.client.SetString(memcache_key(id,key), val)
+	return s.client.SetString(memcache_key(id, key), val)
 }

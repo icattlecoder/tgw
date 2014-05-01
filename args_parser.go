@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type RegisterParse interface {
+type RegisterParser interface {
 	Parse(env *ReqEnv, typ reflect.Type) (reflect.Value, bool)
 }
 

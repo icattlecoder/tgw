@@ -9,13 +9,11 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"time"
 )
 
 var (
-	viewDir   = "view"
-	staticDir = "static"
-	DEBUG     = true
+	ViewDir   = "view"
+	StaticDir = "static"
 )
 
 type ReqEnv struct {
@@ -25,13 +23,14 @@ type ReqEnv struct {
 }
 
 type tgw struct {
-	parses       []RegisterParse
+	parsesr      []RegisterParser
 	mux          *http.ServeMux
 	sessionStore SessionStoreInterface
 	index        string
 }
 
 func NewTGW() *tgw {
+
 	mux := http.NewServeMux()
 	t := tgw{mux: mux, index: "/index"}
 	argsParse := ArgsParse{}
@@ -42,8 +41,8 @@ func NewTGW() *tgw {
 
 //增加url=>args的解析接口。内置两种，EnvParse和ArgsParse，请参考args_parser.go
 //用户也可以根据自己的业务逻辑实现Parse接口
-func (t *tgw) AddParser(parser RegisterParse) *tgw {
-	t.parses = append(t.parses, parser)
+func (t *tgw) AddParser(parser RegisterParser) *tgw {
+	t.parsesr = append(t.parsesr, parser)
 	return t
 }
 
@@ -69,7 +68,7 @@ func (t *tgw) Register(controller interface{}) *tgw {
 	_type := reflect.TypeOf(controller).Elem()
 	_value := reflect.ValueOf(controller).Elem()
 
-	view, err := NewView(viewDir)
+	view, err := NewView(ViewDir)
 	if err != nil {
 		log.Println("NewView err:", err)
 	}
@@ -81,11 +80,17 @@ func (t *tgw) Register(controller interface{}) *tgw {
 	for i := 0; i < _type.NumMethod(); i++ {
 
 		funName := _type.Method(i).Name
+		// only register public func
+		if !(funName[0] >= 'A' && funName[0] <= 'Z') {
+			continue
+		}
+
 		router := fun_router(funName)
 		method := _value.Method(i)
 		methodTyp := method.Type()
 
 		viewName := router
+		//set defalut page
 		if router == t.index {
 			router = "/"
 		}
@@ -96,20 +101,17 @@ func (t *tgw) Register(controller interface{}) *tgw {
 			args := []reflect.Value{}
 			env := newReqEnv(rw, req, session)
 			for i := 0; i < methodTyp.NumIn(); i++ {
-				//解析第i个参数
 				arg_t := methodTyp.In(i)
-				for _, v := range t.parses {
+				for _, v := range t.parsesr {
 					if arg_v, ok := v.Parse(&env, arg_t); ok {
 						args = append(args, arg_v)
 						break
 					}
 				}
 			}
-			start := time.Now()
 			callRet := method.Call(args)
 
 			if len(callRet) > 0 {
-				//有返回值，如果渲染模板
 				if tpl, err := view.Get(viewName); err != nil {
 					if bytes, err := json.Marshal(callRet[0].Interface()); err == nil {
 						rw.Write(bytes)
@@ -118,17 +120,10 @@ func (t *tgw) Register(controller interface{}) *tgw {
 					tpl.Execute(rw, callRet[0].Interface())
 				}
 			} else {
-				//无返回值
-				r, err := view.GetHtml(viewName)
-				if err != nil {
-					return
+				if r, err := view.GetHtml(viewName); err == nil {
+					io.Copy(rw, r)
 				}
-				io.Copy(rw, r)
 			}
-			end := time.Now()
-			log.Println(funName)
-			lgr := Logger{start: start.Unix(), method: req.Method, url: req.URL.RawQuery, host: req.Host, taken: end.Sub(start).Nanoseconds()}
-			lgr.INFO()
 		})
 	}
 	return t
@@ -144,8 +139,8 @@ func (t *tgw) Run(addr string) (err error) {
 		return
 	}
 	//static file server
-	staticDirHandler(t.mux, "/static/", staticDir)
-	log.Println("Listen:",addr)
+	staticDirHandler(t.mux, "/static/", StaticDir)
+	log.Println("Listen:", addr)
 	return http.ListenAndServe(addr, t.mux)
 }
 

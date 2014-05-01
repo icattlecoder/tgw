@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"regexp"
@@ -68,19 +67,7 @@ func (v *view) Get(name string) (tpl *template.Template, err error) {
 	//html的后缀有个好处，sublime等编辑器可对其代码格式化
 	name += ".html"
 	pat := path.Join(v.viewDir, name)
-	if DEBUG {
-		icld := ""
-		icld, err = v.readViewFile(name)
-		if err != nil {
-			return nil, err
-		}
-		icld = v.includeHandler(icld)
-		tpl, err = template.New(name).Delims(v.delims[0], v.delims[1]).Parse(icld)
-		if err != nil {
-			log.Println("Template.Parse err:", err)
-		}
-		return
-	}
+
 	if tpl2, ok := v.cache[pat]; ok {
 		tpl = tpl2
 		return
