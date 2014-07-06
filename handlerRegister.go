@@ -130,6 +130,53 @@ func (t *tgw) Register(controller interface{}) *tgw {
 }
 
 func (t *tgw) RegisterREST(controller interface{}) *tgw {
+	if t.mux == nil {
+		t.mux = http.NewServeMux()
+	}
+	_type := reflect.TypeOf(controller).Elem()
+	_value := reflect.ValueOf(controller).Elem()
+
+	//auto register routers based on reflect
+	for i := 0; i < _type.NumMethod(); i++ {
+
+		funName := _type.Method(i).Name
+		// only register public func
+		if !(funName[0] >= 'A' && funName[0] <= 'Z') {
+			continue
+		}
+
+		router := fun_router(funName)
+		method := _value.Method(i)
+		methodTyp := method.Type()
+
+		//set defalut page
+		if router == t.index {
+			router = "/"
+		}
+		log.Println("Register ", router, "===>", funName)
+
+		t.mux.HandleFunc(router, func(rw http.ResponseWriter, req *http.Request) {
+			session := NewSimpleSession(rw, req, t.sessionStore)
+			args := []reflect.Value{}
+			env := newReqEnv(rw, req, session)
+			for i := 0; i < methodTyp.NumIn(); i++ {
+				arg_t := methodTyp.In(i)
+				for _, v := range t.parsesr {
+					if arg_v, ok := v.Parse(&env, arg_t); ok {
+						args = append(args, arg_v)
+						break
+					}
+				}
+			}
+			callRet := method.Call(args)
+
+			if len(callRet) > 0 {
+				if bytes, err := json.Marshal(callRet[0].Interface()); err == nil {
+					rw.Write(bytes)
+				}
+			}
+		})
+	}
 	return t
 }
 

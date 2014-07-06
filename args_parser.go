@@ -58,6 +58,10 @@ func (d *ArgsParse) Parse(env *ReqEnv, typ reflect.Type) (vl reflect.Value, pars
 			if ival, err := strconv.Atoi(qry); err == nil {
 				vl.Field(i).SetInt(int64(ival))
 			}
+		case "int64":
+			if ival, err := strconv.ParseInt(qry, 10, 64); err == nil {
+				vl.Field(i).SetInt(int64(ival))
+			}
 		case "bool":
 			if ival, err := strconv.ParseBool(qry); err == nil {
 				vl.Field(i).SetBool(ival)
