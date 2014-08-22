@@ -17,9 +17,10 @@ var (
 )
 
 type ReqEnv struct {
-	RW      http.ResponseWriter
-	Req     *http.Request
-	Session SessionInterface
+	RW         http.ResponseWriter
+	Req        *http.Request
+	ParsedBody map[string]interface{}
+	Session    SessionInterface
 }
 
 type tgw struct {
@@ -35,8 +36,11 @@ func NewTGW() *tgw {
 	t := tgw{mux: mux, index: "/index"}
 	argsParse := ArgsParse{}
 	envParser := EnvParse{}
+	restFullParse := RESTFullArgsParse{}
+	jsonParser := ArgsJson{}
+	xmlParser := ArgsXml{}
 
-	return t.AddParser(&argsParse).AddParser(&envParser)
+	return t.AddParser(&argsParse).AddParser(&envParser).AddParser(&restFullParse).AddParser(&jsonParser).AddParser(&xmlParser)
 }
 
 //增加url=>args的解析接口。内置两种，EnvParse和ArgsParse，请参考args_parser.go
@@ -102,10 +106,16 @@ func (t *tgw) Register(controller interface{}) *tgw {
 			env := newReqEnv(rw, req, session)
 			for i := 0; i < methodTyp.NumIn(); i++ {
 				arg_t := methodTyp.In(i)
-				for _, v := range t.parsesr {
-					if arg_v, ok := v.Parse(&env, arg_t); ok {
+				if parser, has := parserCache[arg_t]; has {
+					if arg_v, ok := parser.Parse(&env, arg_t); ok {
 						args = append(args, arg_v)
-						break
+					}
+				} else {
+					for _, v := range t.parsesr {
+						if arg_v, ok := v.Parse(&env, arg_t); ok {
+							args = append(args, arg_v)
+							break
+						}
 					}
 				}
 			}
@@ -156,18 +166,26 @@ func (t *tgw) RegisterREST(controller interface{}) *tgw {
 		log.Println("Register ", router, "===>", funName)
 
 		t.mux.HandleFunc(router, func(rw http.ResponseWriter, req *http.Request) {
+			log.Println(router)
 			session := NewSimpleSession(rw, req, t.sessionStore)
 			args := []reflect.Value{}
 			env := newReqEnv(rw, req, session)
 			for i := 0; i < methodTyp.NumIn(); i++ {
 				arg_t := methodTyp.In(i)
-				for _, v := range t.parsesr {
-					if arg_v, ok := v.Parse(&env, arg_t); ok {
+				if parser, has := parserCache[arg_t]; has {
+					if arg_v, ok := parser.Parse(&env, arg_t); ok {
 						args = append(args, arg_v)
-						break
+					}
+				} else {
+					for _, v := range t.parsesr {
+						if arg_v, ok := v.Parse(&env, arg_t); ok {
+							args = append(args, arg_v)
+							break
+						}
 					}
 				}
 			}
+			log.Println(args)
 			callRet := method.Call(args)
 
 			if len(callRet) > 0 {
@@ -213,5 +231,11 @@ func fun_router(funName string) string {
 			paths = append(paths, []byte(funName[s:]))
 		}
 	}
-	return strings.ToLower(string(bytes.Join(paths, []byte{'/'})))
+	path := strings.ToLower(string(bytes.Join(paths, []byte{'/'})))
+
+	last := funName[len(funName)-1]
+	if last == '_' {
+		return path[0:len(path)-1] + "/"
+	}
+	return path
 }

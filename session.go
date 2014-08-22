@@ -13,12 +13,17 @@ type SessionStoreInterface interface {
 	Get(sid string, key string, val interface{}) error
 	Set(sid string, key string, val interface{}) error
 	Clear(sid string, key string)
+	SetString(sid string, key string, val string) error
+	GetString(sid string, key string) (string, error)
 }
 
 type SessionInterface interface {
 	Get(key string, val interface{}) error
 	Set(key string, val interface{}) error
+	SetString(key string, val string) error
+	GetString(key string) (string, error)
 	Clear(key string)
+	Id() string
 }
 
 var (
@@ -112,6 +117,10 @@ func NewCookie(name, value string) *http.Cookie {
 	return cookie
 }
 
+func (s *SimpleSession) Id() string {
+	return s.id
+}
+
 func (s *SimpleSession) Clear(key string) {
 	s.store.Clear(s.id, key)
 }
@@ -122,6 +131,14 @@ func (s *SimpleSession) Get(key string, val interface{}) (err error) {
 
 func (s *SimpleSession) Set(key string, val interface{}) (err error) {
 	return s.store.Set(s.id, key, val)
+}
+
+func (s *SimpleSession) SetString(key string, val string) (err error) {
+	return s.store.SetString(s.id, key, val)
+}
+
+func (s *SimpleSession) GetString(key string) (string, error) {
+	return s.store.GetString(s.id, key)
 }
 
 func (s *SimpleSession) Flush() {

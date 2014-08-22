@@ -32,6 +32,20 @@ func (s *Service) Hello(args HelloArgs, env ReqEnv) (data map[string]interface{}
 	return
 }
 
+type HelloArgsRest struct {
+	Who  string
+	When int64
+	What string
+}
+
+func (s *Service) Hellorest_(args HelloArgsRest, env ReqEnv) (data map[string]interface{}) {
+	data = map[string]interface{}{}
+	data["who"] = args.Who
+	data["when"] = args.When
+	data["what"] = args.What
+	return
+}
+
 // mock setup
 func BenchmarkA(b *testing.B) {
 	go (func() {
@@ -57,7 +71,7 @@ func BenchmarkA(b *testing.B) {
 		err := http.ListenAndServe(HOST2, mux)
 		log.Fatalln(err)
 	})()
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 1)
 }
 
 func get(now int64, host string) {
@@ -86,5 +100,23 @@ func BenchmarkRegister2(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		get(time.Now().Unix(), HOST2)
+	}
+}
+
+func BenchmarkRegister3(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		now := time.Now().Unix()
+		resp, err := http.Get(fmt.Sprintf("http://%s/hellorest/who/icattlecoder/when/%d/what/hello", HOST, now))
+		if err != nil {
+			log.Fatalln("http.Get")
+		}
+
+		decoder := json.NewDecoder(resp.Body)
+		res := HelloArgsRest{}
+		err = decoder.Decode(&res)
+		if err != nil || res.When != now {
+			log.Fatalln("not equal")
+		}
+		resp.Body.Close()
 	}
 }

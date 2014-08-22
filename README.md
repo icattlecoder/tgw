@@ -86,6 +86,8 @@ tgw的Register方法会自动注册以下的路由：
 /index 		 ===> func (s *Server) Index() (data map[string]interface{}) 
 /Json 		 ===> func (s *Server) Json() (data map[string]interface{})
 /admin/index ===> func (s *Server) AdminIndex()
+/admin/index2/ ===> func (s *Server) AdminIndex2_()
+
 ```
 
 即`localhost:8080/index`的处理函数是`service.Index`,`localhost:8080/admin/index`的处理函数是`service.AdminIndex`

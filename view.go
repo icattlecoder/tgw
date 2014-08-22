@@ -82,7 +82,7 @@ func (v *view) Get(name string) (tpl *template.Template, err error) {
 		if err != nil {
 			return
 		}
-		v.cache[pat] = tpl
+		// v.cache[pat] = tpl
 		return
 	}
 }
